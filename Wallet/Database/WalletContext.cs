@@ -16,8 +16,19 @@ namespace WalletApp.Database
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<Wallet>().ToTable(nameof(Wallets)).HasMany<WalletOperation>();
-            modelBuilder.Entity<WalletOperation>().ToTable(nameof(Operations)).HasOne<Wallet>();
+            modelBuilder.Entity<Wallet>()
+                .HasMany((w => w.Operations))
+                .WithOne(o => o.Wallet)
+                .OnDelete(DeleteBehavior.Cascade)
+                .IsRequired();
+
+            modelBuilder.Entity<Wallet>()
+                .ToTable(nameof(Wallets))
+                .HasIndex(x=>x.UserId);
+
+            modelBuilder.Entity<WalletOperation>()
+                .ToTable(nameof(Operations))
+                .HasIndex(x=>x.WalletId);
         }
     }
 }

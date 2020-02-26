@@ -12,11 +12,12 @@ namespace WalletApp.Database
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }
 
-        [Required]
         public int WalletId { get; set; }
 
         [Required]
         public decimal Mov { get; set; }
+
+        public Wallet Wallet { get; set; }
 
         [Required]
         public DateTime CreateDate { get; set; }

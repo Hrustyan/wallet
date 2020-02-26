@@ -87,7 +87,6 @@ namespace WalletApp.Controllers
                 {
                     return new WalletApiErrorResponse("Нельзя создать движение с нулевой суммой");
                 }
-
                 using (var trans = _context.Database.BeginTransaction())
                 {
                     var wallet = _context.Wallets.FirstOrDefault(x => x.UserId == userId && x.Id == createWalletMovementRequest.WalletId);
@@ -117,6 +116,10 @@ namespace WalletApp.Controllers
                         }
                     }
                 }
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                return new WalletApiErrorResponse("Ошибка операции, состояние кошелька было изменено, во время операции");
             }
             catch (Exception ex)
             {
@@ -151,8 +154,6 @@ namespace WalletApp.Controllers
                         return new WalletApiErrorResponse($"Не существует кошелька с Id = {convertMoneyRequest.TargetWalletId}");
                     }
 
-                    
-
                     var convertedSum = _currencyService.Convert(convertMoneyRequest.Sum, sourceWallet.Currency, targetWallet.Currency);
                     var transactionDate = DateTime.Now;
 
@@ -182,6 +183,10 @@ namespace WalletApp.Controllers
 
                     return new TransferResponse(sourceWallet, targetWallet);
                 }
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                return new WalletApiErrorResponse("Ошибка операции, состояние кошелька было изменено, во время операции");
             }
             catch (Exception ex)
             {

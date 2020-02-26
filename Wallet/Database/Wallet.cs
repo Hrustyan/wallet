@@ -10,6 +10,11 @@ namespace WalletApp.Database
 {
     public class Wallet
     {
+        public Wallet()
+        {
+            Operations = new HashSet<WalletOperation>();
+        }
+
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         [Key]
         public int Id { get; set; }
@@ -23,7 +28,6 @@ namespace WalletApp.Database
         [ConcurrencyCheck]
         public decimal CacheSum { get; set; }
 
-        [ForeignKey(nameof(WalletOperation.WalletId))]
-        public List<WalletOperation> Operations { get; set; }
+        public virtual ICollection<WalletOperation> Operations { get; set; }
     }
 }
