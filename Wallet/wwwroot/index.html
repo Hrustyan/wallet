@@ -1,0 +1,173 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title></title>
+</head>
+<body onload="main()">
+
+    <h1>Шкурка от балды</h1>
+
+    <div>
+        <label for="userId">UserId:</label>
+        <input id="userId" value="10" type="number" min="1" max="100" step="1" onchange="updateWallets()" />
+    </div>
+    <br />
+    <div>
+        <label for="userId">Создать кошелек:</label>
+        <button onclick="createWallet()">Создать</button>
+        <select id="createWallerCurrency" name="currencySelector"></select>
+    </div>
+    <div id="wallets"></div>
+
+    <script src="jquery-3.4.1.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
+    <script>
+        function getUserId() {
+            return $("#userId").val();
+        }
+
+        function transfer(walletId) {
+            var userId = getUserId();
+            var sum = prompt("Введите сумму перевода");
+            sum = parseFloat(sum);
+            if (sum) {
+                var targetWalletId = prompt("Введите Id кошелька на который хотите перевести деньги");
+                targetWalletId = parseInt(targetWalletId);
+                if (targetWalletId) {
+                    $.ajax({
+                        url: `/api/wallet/${userId}/transfer`,
+                        type: "POST",
+                        contentType: 'application/json',
+                        dataType: "json",
+                        data: JSON.stringify({
+                            SourceWalletId: walletId,
+                            TargetWalletId: targetWalletId,
+                            Sum: sum
+                        }),
+                        success: (data) => {
+                            if (data.result) {
+                                updateWallet(data.data.sourceWallet);
+                                if ($(`#w-${data.data.targetWallet.id}`).length > 0) {
+                                    updateWallet(data.data.targetWallet);
+                                }
+                            }
+                            else {
+                                alert(data.error);
+                            }
+                        }
+                    });
+                }
+            }
+        }
+
+        function createWallet() {
+            var currency = $("#createWallerCurrency").val();
+            var userId = getUserId();
+
+            $.ajax({
+                url: `/api/wallet/${userId}/createwallet`,
+                type: "POST",
+                contentType: 'application/json',
+                dataType: "json",
+                data: JSON.stringify({ Currency: currency }),
+                success: (data) => {
+                    if (data.result) {
+                        updateWallet(data.data);
+                    }
+                    else {
+                        alert(data.error);
+                    }
+                }
+            });
+        }
+
+        function updateCurrencies() {
+            $("[name=currencySelector]").html("");
+            $.getJSON(`/api/wallet/getcurrencies`, function (data) {
+                if (data.result) {
+                    console.log(data.data);
+                    data.data.forEach((currency) => {
+                        $("[name=currencySelector]").append(`<option value=${currency}>${currency}</option>`)
+                    });
+                }
+            });
+        }
+
+        function movement(walletId, sum, callback) {
+            var userId = getUserId();
+            $.ajax({
+                url: `/api/wallet/${userId}/movement`,
+                type: "POST",
+                contentType: 'application/json',
+                dataType: "json",
+                data: JSON.stringify({
+                    WalletId: walletId,
+                    Money: sum
+                }),
+                success: (data) => {
+                    if (data.result) {
+                        callback(data.data);
+                    }
+                    else {
+                        alert(data.error);
+                    }
+                }
+            });
+        }
+
+        function updateWallet(wallet) {
+            var tr = $(`#w-${wallet.id}`);
+
+            if (tr.length == 0) {
+                var table = $("#wallets table");
+                tr = $(`<tr id="w-${wallet.id}">`);
+                table.append(tr);
+            }
+            tr.html(
+                `<td>${wallet.id}</td>
+                 <td>${wallet.currency}</td>
+                 <td>${wallet.sum.toFixed(2)}</td>
+                 <td><button onclick="movementPlus(${wallet.id})">Пополнить</button></td>
+                 <td><button onclick="movementMinus(${wallet.id})">Снять</button></td>
+                 <td><button onclick="transfer(${wallet.id})">Перевести</button></td>
+                `
+            );
+        }
+
+        function movementPlus(walletId) {
+            var sum = prompt("Введите сумму пополнения");
+            sum = parseFloat(sum);
+            if (sum) {
+                movement(walletId, sum, updateWallet);
+            }
+        }
+
+        function movementMinus(walletId) {
+            var sum = prompt("Введите сумму снятия");
+            sum = parseFloat(sum);
+            if (sum) {
+                movement(walletId, -sum, updateWallet);
+            }
+        }
+
+
+        function updateWallets() {
+            var userId = getUserId();
+            $("#wallets").html("<table>");
+            $.getJSON(`/api/wallet/${userId}/getwallets`, (data) => {
+                if (data.result) {
+                    console.log(data.data);
+                    data.data.forEach((wallet) => {
+                        updateWallet(wallet);
+                    });
+                }
+            });
+        }
+
+        function main() {
+            updateCurrencies();
+            updateWallets();
+        }
+    </script>
+</body>
+</html>
